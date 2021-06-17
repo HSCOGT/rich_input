@@ -2,56 +2,59 @@ import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 
 /// Expanded textfield support @someone #subjects with highlighting display.
 class RichInput extends TextField {
   const RichInput({
-    Key key,
-    RichInputController controller,
-    FocusNode focusNode,
-    InputDecoration decoration = const InputDecoration(),
-    TextInputType keyboardType,
-    TextInputAction textInputAction,
+    Key? key,
+    RichInputController? controller,
+    FocusNode? focusNode,
+    InputDecoration? decoration = const InputDecoration(),
+    TextInputType? keyboardType,
+    TextInputAction? textInputAction,
     TextCapitalization textCapitalization = TextCapitalization.none,
-    TextStyle style,
-    StrutStyle strutStyle,
+    TextStyle? style,
+    StrutStyle? strutStyle,
     TextAlign textAlign = TextAlign.start,
-    TextAlignVertical textAlignVertical,
-    TextDirection textDirection,
+    TextAlignVertical? textAlignVertical,
+    TextDirection? textDirection,
     bool readOnly = false,
-    ToolbarOptions toolbarOptions,
-    bool showCursor,
+    ToolbarOptions? toolbarOptions,
+    bool? showCursor,
     bool autofocus = false,
     bool obscureText = false,
     bool autocorrect = true,
-    SmartDashesType smartDashesType,
-    SmartQuotesType smartQuotesType,
+    SmartDashesType? smartDashesType,
+    SmartQuotesType? smartQuotesType,
     bool enableSuggestions = true,
-    int maxLines = 1,
-    int minLines,
+    int? maxLines,
+    int? minLines,
     bool expands = false,
-    int maxLength,
-    bool maxLengthEnforced = true,
-    void Function(String) onChanged,
-    void Function() onEditingComplete,
-    void Function(String) onSubmitted,
-    List<TextInputFormatter> inputFormatters,
-    bool enabled,
+    int? maxLength,
+    MaxLengthEnforcement maxLengthEnforcement = MaxLengthEnforcement.enforced,
+    void Function(String)? onChanged,
+    void Function()? onEditingComplete,
+    void Function(String)? onSubmitted,
+    List<TextInputFormatter>? inputFormatters,
+    bool? enabled,
     double cursorWidth = 2.0,
-    Radius cursorRadius,
-    Color cursorColor,
+    Radius? cursorRadius,
+    Color? cursorColor,
     BoxHeightStyle selectionHeightStyle = BoxHeightStyle.tight,
     BoxWidthStyle selectionWidthStyle = BoxWidthStyle.tight,
-    Brightness keyboardAppearance,
+    Brightness? keyboardAppearance,
     EdgeInsets scrollPadding = const EdgeInsets.all(20),
     DragStartBehavior dragStartBehavior = DragStartBehavior.start,
     bool enableInteractiveSelection = true,
-    void Function() onTap,
+    void Function()? onTap,
     Widget Function(BuildContext,
-            {int currentLength, bool isFocused, int maxLength})
+            {required int currentLength,
+            required bool isFocused,
+            required int? maxLength})?
         buildCounter,
-    ScrollController scrollController,
-    ScrollPhysics scrollPhysics,
+    ScrollController? scrollController,
+    ScrollPhysics? scrollPhysics,
   }) : super(
           controller: controller,
           key: key,
@@ -78,7 +81,7 @@ class RichInput extends TextField {
           minLines: minLines,
           expands: expands,
           maxLength: maxLength,
-          maxLengthEnforced: maxLengthEnforced,
+          maxLengthEnforcement: maxLengthEnforcement,
           onChanged: onChanged,
           onEditingComplete: onEditingComplete,
           onSubmitted: onSubmitted,
@@ -103,10 +106,10 @@ class RichInput extends TextField {
 /// Expanded from TextEditingController,add insertBlock,insertText method and data property.
 class RichInputController extends TextEditingController {
   final List<RichBlock> _blocks = [];
-  RegExp _exp;
-  TextEditingValue _focusValue;
+  RegExp? _exp;
+  TextEditingValue? _focusValue;
 
-  RichInputController({String text}) : super(text: text);
+  RichInputController({String? text}) : super(text: text);
 
   /// Insert a rich media [RichBlock] in the cursor position
   void insertBlock(RichBlock block) {
@@ -122,7 +125,7 @@ class RichInputController extends TextEditingController {
     TextSelection selection = value.selection;
     if (selection.baseOffset == -1) {
       if (_focusValue != null) {
-        selection = _focusValue.selection;
+        selection = _focusValue!.selection;
       } else {
         final String str = this.text + text;
         value = value.copyWith(
@@ -161,7 +164,7 @@ class RichInputController extends TextEditingController {
     if (newValue.selection.baseOffset != -1) {
       _focusValue = newValue;
     } else if (_focusValue != null &&
-        _focusValue.selection.baseOffset > newValue.text.length) {
+        _focusValue!.selection.baseOffset > newValue.text.length) {
       _focusValue = null;
     }
   }
@@ -173,8 +176,8 @@ class RichInputController extends TextEditingController {
         newValue.selection.baseOffset == -1) return newValue;
     final oldText = oldValue.text;
     final delLength = oldText.length - newValue.text.length;
-    String char;
-    int offset;
+    String? char;
+    int? offset;
     if (delLength == 1) {
       char = oldText.substring(
           newValue.selection.baseOffset, newValue.selection.baseOffset + 1);
@@ -221,12 +224,16 @@ class RichInputController extends TextEditingController {
   }
 
   @override
-  TextSpan buildTextSpan({TextStyle style, bool withComposing}) {
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
     if (!value.composing.isValid || !withComposing) {
       return _getTextSpan(text, style);
     }
 
-    final TextStyle composingStyle = style.merge(
+    final TextStyle? composingStyle = style?.merge(
       const TextStyle(decoration: TextDecoration.underline),
     );
     return TextSpan(
@@ -242,7 +249,7 @@ class RichInputController extends TextEditingController {
     );
   }
 
-  TextSpan _getTextSpan(String text, TextStyle style) {
+  TextSpan _getTextSpan(String text, TextStyle? style) {
     if (_exp == null || text.isEmpty) {
       return TextSpan(style: style, text: text);
     }
@@ -250,12 +257,12 @@ class RichInputController extends TextEditingController {
     final List<TextSpan> children = [];
 
     text.splitMapJoin(
-      _exp,
+      _exp!,
       onMatch: (m) {
-        final key = m[0];
-        final RichBlock block = _blocks.firstWhere((element) {
+        final key = m[0]!;
+        final RichBlock? block = _blocks.firstWhereOrNull((element) {
           return element._key == key;
-        }, orElse: () => null);
+        });
         if (block != null) {
           children.add(
             TextSpan(
@@ -288,8 +295,8 @@ class RichBlock {
   final String _key;
 
   RichBlock({
-    @required String text,
-    @required this.data,
+    required String text,
+    required this.data,
     this.style = const TextStyle(color: Colors.blue),
   })  : text = text.replaceAll(_filterCharacters, ""),
         _key = "${text.replaceAll(_filterCharacters, "")}$_specialChar";
